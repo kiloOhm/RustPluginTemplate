@@ -1,4 +1,5 @@
-﻿using Oxide.Core;
+﻿using Newtonsoft.Json;
+using Oxide.Core;
 using Oxide.Core.Configuration;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace Oxide.Plugins
         #region oxide hooks
         void Init()
         {
-            permission.RegisterPermission("RustPluginTemplate.use", this);
+            permission.RegisterPermission("RPT.use", this);
             File = Interface.Oxide.DataFileSystem.GetFile("RustPluginTemplate/posData");
             loadData();
         }
@@ -26,14 +27,15 @@ namespace Oxide.Plugins
         void Loaded()
         {
             lang.RegisterMessages(messages, this);
+            cmd.AddChatCommand("pos", this, nameof(posCommand));
         }
         #endregion
 
         #region commands
-        [ChatCommand("pos")]
+        //see Loaded() hook
         private void posCommand(BasePlayer player, string command, string[] args)
         {
-            if (!config.allowPosCommand) return;
+            if (!config.allowPosCom) return;
             if (permission.UserHasPermission(player.UserIDString, "RustPluginTemplate.use"))
             {
                 //get player Position
@@ -91,15 +93,9 @@ namespace Oxide.Plugins
 
         private class ConfigData
         {
-            public bool allowPosCommand;
-        }
+            [JsonProperty(PropertyName = "Allow Pos Command")]
+            public bool allowPosCom = true;
 
-        private ConfigData GetDefaultConfig()
-        {
-            return new ConfigData
-            {
-                allowPosCommand = true
-            };
         }
 
         protected override void LoadConfig()
@@ -112,22 +108,16 @@ namespace Oxide.Plugins
             }
             catch
             {
-                LoadDefaultConfig();
+                Puts("Config data is corrupted, replacing with default");
+                config = new ConfigData();
             }
 
             SaveConfig();
         }
 
-        protected override void LoadDefaultConfig()
-        {
-            PrintError("Configuration file is corrupt(or not exists), creating new one!");
-            config = GetDefaultConfig();
-        }
+        protected override void SaveConfig() => Config.WriteObject(config);
 
-        protected override void SaveConfig()
-        {
-            Config.WriteObject(config);
-        }
+        protected override void LoadDefaultConfig() => config = new ConfigData();
         #endregion
 
         #region Localization
