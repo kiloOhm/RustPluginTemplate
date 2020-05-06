@@ -11,16 +11,23 @@ namespace Oxide.Plugins
     [Description("Template")]
     class RustPluginTemplate : RustPlugin
     {
-        #region fields
-        DynamicConfigFile File;
+        #region global
+        RustPluginTemplate Instance = null;
+
+        public RustPluginTemplate()
+        {
+            Instance = this;
+        }
+
+        DynamicConfigFile DataFile;
         StoredData storedData;
         #endregion
 
         #region oxide hooks
         void Init()
         {
-            permission.RegisterPermission("RPT.use", this);
-            File = Interface.Oxide.DataFileSystem.GetFile("RustPluginTemplate/posData");
+            permission.RegisterPermission("rpt.use", this);
+            DataFile = Interface.Oxide.DataFileSystem.GetFile("RustPluginTemplate/posData");
             loadData();
         }
 
@@ -36,20 +43,18 @@ namespace Oxide.Plugins
         private void posCommand(BasePlayer player, string command, string[] args)
         {
             if (!config.allowPosCom) return;
-            if (permission.UserHasPermission(player.UserIDString, "RustPluginTemplate.use"))
-            {
-                //get player Position
-                Vector3 pos = player.transform.position;
-                //store Position in Data
-                storedData.positionList.Add(pos);
-                saveData();
-                //output localized message
-                PrintToChat(player, lang.GetMessage("posOutput", this, player.UserIDString), pos.x, pos.y, pos.z);
-            }
-            else
+            if (!player.IPlayer.HasPermission("rpt.use"))
             {
                 PrintToChat(player, lang.GetMessage("noPermission", this, player.UserIDString));
+                return;
             }
+            //get player Position
+            Vector3 pos = player.transform.position;
+            //store Position in Data
+            storedData.positionList.Add(pos);
+            saveData();
+            //output localized message
+            PrintToChat(player, lang.GetMessage("posOutput", this, player.UserIDString), pos.x, pos.y, pos.z);
         }
         #endregion
 
@@ -58,16 +63,14 @@ namespace Oxide.Plugins
         {
             public List<Vector3> positionList = new List<Vector3>();
 
-            public StoredData()
-            {
-            }
+            public StoredData() { }
         }
 
         void saveData()
         {
             try
             {
-                File.WriteObject(storedData);
+                DataFile.WriteObject(storedData);
             }
             catch (Exception E)
             {
@@ -79,7 +82,7 @@ namespace Oxide.Plugins
         {
             try
             {
-                storedData = File.ReadObject<StoredData>();
+                storedData = DataFile.ReadObject<StoredData>();
             }
             catch (Exception E)
             {
@@ -94,8 +97,16 @@ namespace Oxide.Plugins
         private class ConfigData
         {
             [JsonProperty(PropertyName = "Allow Pos Command")]
-            public bool allowPosCom = true;
+            public bool allowPosCom;
 
+        }
+
+        private ConfigData getDefaultConfig()
+        {
+            return new ConfigData
+            {
+                allowPosCom = true
+            };
         }
 
         protected override void LoadConfig()
@@ -117,7 +128,7 @@ namespace Oxide.Plugins
 
         protected override void SaveConfig() => Config.WriteObject(config);
 
-        protected override void LoadDefaultConfig() => config = new ConfigData();
+        protected override void LoadDefaultConfig() => config = getDefaultConfig();
         #endregion
 
         #region Localization
