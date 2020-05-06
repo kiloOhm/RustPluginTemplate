@@ -12,7 +12,7 @@ namespace Oxide.Plugins
     class RustPluginTemplate : RustPlugin
     {
         #region global
-        RustPluginTemplate Instance = null;
+        private static RustPluginTemplate Instance = null;
 
         public RustPluginTemplate()
         {
@@ -26,7 +26,7 @@ namespace Oxide.Plugins
         #region oxide hooks
         void Init()
         {
-            permission.RegisterPermission("rpt.use", this);
+            permission.RegisterPermission("RustPluginTemplate.use", this);
             DataFile = Interface.Oxide.DataFileSystem.GetFile("RustPluginTemplate/posData");
             loadData();
         }
@@ -43,7 +43,7 @@ namespace Oxide.Plugins
         private void posCommand(BasePlayer player, string command, string[] args)
         {
             if (!config.allowPosCom) return;
-            if (!player.IPlayer.HasPermission("rpt.use"))
+            if (!player.IPlayer.HasPermission("RustPluginTemplate.use"))
             {
                 PrintToChat(player, lang.GetMessage("noPermission", this, player.UserIDString));
                 return;
