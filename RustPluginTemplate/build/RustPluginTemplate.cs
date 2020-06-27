@@ -196,7 +196,7 @@ namespace Oxide.Plugins
             GuiContainer container = new GuiContainer(this, "positionList");
             container.addButton("close", new Rectangle(800, 80, 320, 50, 1920, 1080, true), GuiContainer.Layer.hud, new GuiColor("red"), text: new GuiText("close"));
             Rectangle backgroundRect = new Rectangle(800, 130, 320, 790, 1920, 1080, true);
-            container.addPlainPanel("background", backgroundRect, GuiContainer.Layer.hud, new GuiColor(0,0,0,0.3f), blur: true);
+            container.addPlainPanel("background", backgroundRect, GuiContainer.Layer.hud, new GuiColor(0,0,0,0.3f), blur: GuiContainer.Blur.medium);
             int i = 0;
             foreach(Vector3 pos in StoredData.getList())
             {
