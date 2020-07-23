@@ -30,15 +30,13 @@ namespace Oxide.Plugins
             if (!config.allowPosCom) return;
             if (!hasPermission(player, permissions.use))
             {
-                PrintToChat(player, lang.GetMessage("noPermission", this, player.UserIDString));
+                Localization.SendLocalizedMessage(player, Localization.UniversalMessages.noPermission);
                 return;
             }
             //get player Position
             Vector3 pos = player.transform.position;
             //store Position in Data
             StoredData.addPosition(pos);
-            //output localized message
-            PrintToChat(player, lang.GetMessage("posOutput", this, player.UserIDString), pos.x, pos.y, pos.z);
         }
 
         private void listCommand(BasePlayer player, string command, string[] args)
@@ -212,20 +210,80 @@ namespace Oxide.Plugins
     }
 }﻿namespace Oxide.Plugins
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using UnityEngine;
+
+    partial class RustPluginTemplate
+    {
+        public class Helpers
+        {
+            public static BasePlayer findPlayer(string name, BasePlayer player)
+            {
+                if (string.IsNullOrEmpty(name)) return null;
+                ulong id;
+                ulong.TryParse(name, out id);
+                List<BasePlayer> results = BasePlayer.allPlayerList.Where((p) => p.displayName.Contains(name, System.Globalization.CompareOptions.IgnoreCase) || p.userID == id).ToList();
+                if (results.Count == 0)
+                {
+                    if (player != null) Localization.SendLocalizedMessage(player, Localization.UniversalMessages.noPlayersFound);
+                }
+                else if (results.Count == 1)
+                {
+                    return results[0];
+                }
+                else if (player != null)
+                {
+                    Localization.SendLocalizedMessage(player, Localization.UniversalMessages.multiplePlayersFound);
+                    int i = 1;
+                    foreach (BasePlayer p in results)
+                    {
+                        player.ChatMessage($"{i}. {p.displayName}[{p.userID}]");
+                        i++;
+                    }
+                }
+                return null;
+            }
+        }
+    }
+}﻿namespace Oxide.Plugins
+{
     using System.Collections.Generic;
 
     partial class RustPluginTemplate : RustPlugin
     {
         partial void initLang()
         {
-            lang.RegisterMessages(messages, this);
+            lang.RegisterMessages(Localization.messages, this);
         }
 
-        private Dictionary<string, string> messages = new Dictionary<string, string>()
+        public class Localization
         {
-            {"posOutput", "Player Coordinates: X:{0}, Y:{1}, Z:{2}"},
-            {"noPermission", "You don't have permission to use this command!"}
-        };
+            public enum UniversalMessages { noPermission, invalidArguments, noPlayersFound, multiplePlayersFound };
+
+            public static Dictionary<string, string> messages = new Dictionary<string, string>()
+            {
+                {UniversalMessages.noPermission.ToString(), "You don't have permission to use this command!"},
+                {UniversalMessages.invalidArguments.ToString(), "Too few/many arguments given. Remember to use quotes(\"\") for names containing whitespaces!" },
+                {UniversalMessages.noPlayersFound.ToString(), "No players found!" },
+                {UniversalMessages.multiplePlayersFound.ToString(), "Multiple players found:" }
+            };
+
+            public static void SendLocalizedMessage(BasePlayer player, UniversalMessages message, string[] args = null)
+            {
+                SendLocalizedMessage(player, message.ToString(), args);
+            }
+
+            public static void SendLocalizedMessage(BasePlayer player, string msgKey, string[] args = null)
+            {
+                string message;
+                string langMsg = PluginInstance.lang.GetMessage(msgKey, PluginInstance, player.UserIDString);
+                if (args != null) message = string.Format(langMsg, args);
+                else message = langMsg;
+                PluginInstance.PrintToChat(player, message);
+            }
+        }
     }
 }﻿namespace Oxide.Plugins
 {
